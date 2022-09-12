@@ -11,5 +11,5 @@ class ProductSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        depth = 1
         fields = ('id', 'date', 'products')
+        # depth = 1

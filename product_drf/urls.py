@@ -20,4 +20,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path('api/', include('product.urls', 'products')),
+    path(
+        'api_drinks/',
+        include(
+            ('api_decorator.urls', 'api_decorator'),
+            namespace='api_decorators'
+        )
+    )
 ]

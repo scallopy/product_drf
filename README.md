@@ -44,3 +44,12 @@ $ django-admin startapp product
 $ python3.manage.py makemigrations
 $ python3.8 manage.py migrate
 ```
+
+## view response in terminal:
+
+consume.py
+
+```
+(venv) scaly@debian:~/applying_job/cld/product_drf/api_decorator$ python3.8 consume.py
+[{'id': 2, 'name': 'Orange Soda', 'description': 'so orangey'}, {'id': 3, 'name': 'Orange Soda 1', 'description': 'This is so orangey'}]
+```
