@@ -26,5 +26,6 @@ urlpatterns = [
             ('api_decorator.urls', 'api_decorator'),
             namespace='api_decorators'
         )
-    )
+    ),
+    path('todos/', include(('todos.urls', 'todos'), namespace='todos'))
 ]
