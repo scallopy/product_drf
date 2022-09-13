@@ -8,6 +8,7 @@ from .serializers import TodoSerializer
 
 class TodoListApiView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TodoSerializer
 
     # get list:
     def get(self, request, *args, **kwargs):
@@ -17,12 +18,10 @@ class TodoListApiView(APIView):
 
     def post(self, request, *args, **kwargs):
 
-        data = {
-            'task': request.data.get('task'),
-            'created_at': request.data.get('created_at'),
-            'user': request.user.id
-        }
-        serializer = TodoSerializer(data=data)
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -31,6 +30,7 @@ class TodoListApiView(APIView):
 
 class TodoDetailApiView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TodoSerializer
 
     def get_object(self, todo_id, user_id):
         try:
@@ -57,11 +57,11 @@ class TodoDetailApiView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        data = {
-            'task': request.data.get('task'),
-        }
-        serializer = TodoSerializer(
-            instance=todo_instance, data=data, partial=True
+        serializer = self.serializer_class(
+            instance=todo_instance,
+            data=request.data,
+            context={'request': request},
+            partial=True
         )
         if serializer.is_valid():
             serializer.save()
