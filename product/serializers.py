@@ -9,7 +9,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    products = ProductSerializer(read_only=True, many=True)
+
     class Meta:
         model = Order
         fields = ('id', 'date', 'products')
-        # depth = 1
