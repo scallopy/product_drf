@@ -7,11 +7,11 @@ from .serializers import TodoSerializer
 
 
 class TodoListApiView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     # get list:
     def get(self, request, *args, **kwargs):
-        todos = Todo.objects.all()
+        todos = Todo.objects.filter(user=request.user.id)
         serializer = TodoSerializer(todos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -19,7 +19,8 @@ class TodoListApiView(APIView):
 
         data = {
             'task': request.data.get('task'),
-            'created_at': request.data.get('created_at')
+            'created_at': request.data.get('created_at'),
+            'user': request.user.id
         }
         serializer = TodoSerializer(data=data)
         if serializer.is_valid():
@@ -29,16 +30,16 @@ class TodoListApiView(APIView):
 
 
 class TodoDetailApiView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self, todo_id):
+    def get_object(self, todo_id, user_id):
         try:
-            return Todo.objects.get(id=todo_id)
+            return Todo.objects.get(id=todo_id, user=user_id)
         except Todo.DoesNotExist:
             return None
 
     def get(self, request, todo_id, *args, **kwargs):
-        todo_instance = self.get_object(todo_id)
+        todo_instance = self.get_object(todo_id, request.user.id)
         if not todo_instance:
             return Response(
                 {"res": f"Object with todo id: {todo_id} does not extists!"},
@@ -49,7 +50,7 @@ class TodoDetailApiView(APIView):
         return Response(serializer.data)
 
     def put(self, request, todo_id, *args, **kwargs):
-        todo_instance = self.get_object(todo_id)
+        todo_instance = self.get_object(todo_id, request.user.id)
         if not todo_instance:
             return Response(
                 {"res": f"Object with todo id: {todo_id} does not extists!"},
@@ -67,7 +68,7 @@ class TodoDetailApiView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, todo_id, *args, **kwargs):
-        todo_instance = self.get_object(todo_id)
+        todo_instance = self.get_object(todo_id, request.user.id)
         if not todo_instance:
             return Response(
                 {"res": f"Object with todo id: {todo_id} does not extists!"},
