@@ -1,5 +1,6 @@
 from django.db import models
 from enum import Enum
+from enumchoicefield import ChoiceEnum, EnumChoiceField
 
 
 class Months(Enum):
@@ -36,4 +37,28 @@ class Order(models.Model):
     )
 
     def get_order_month(self):
-        pass
+        month = str(self.date.year) + " " + Months(self.date.month).name
+        return month
+
+
+class Metric(ChoiceEnum):
+    price = "price"
+    count = "count"
+
+
+class Stats(models.Model):
+    start_date = models.DateField()
+    end_date = models.DateField()
+    metric = EnumChoiceField(enum_class=Metric , default=Metric.price)
+
+    def __str__(self):
+        return "Metric=" + str(self.metric)
+
+    def get_order_price(self):
+        orders = Order.objects.all()
+        count = 0
+        for order in orders:
+            for product in order.products:
+                count += product.price
+        return {'count': count}
+

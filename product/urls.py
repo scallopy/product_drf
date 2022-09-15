@@ -11,4 +11,5 @@ router.register(r'orders', views.OrderViewSet, basename='orders')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('stats/', views.StatsListApiView.as_view())
 ]

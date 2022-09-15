@@ -1,12 +1,17 @@
+from django.shortcuts import redirect
 from rest_framework import viewsets
-# from rest_framework.decorators import action
-# from rest_framework import renderers
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import generics
+from rest_framework import status
+from rest_framework import permissions
 from product.models import Product, Order
-from product.serializers import ProductSerializer, OrderSerializer
-# import datetime
-# from enum import Enum
+from product.serializers import (
+    ProductSerializer,
+    OrderSerializer,
+    StatsSerializer
+)
+from django.utils.dateparse import parse_date
+import datetime
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -19,53 +24,56 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
 
-class OrderMonth(generics.RetrieveAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
-
-    def get_month(self, request, *args, **kwargs):
-        print(request.pk)
-        queryset = Order.objects.filter(pk=request.pk)
-        return self.retrieve(request, *args, **kwargs)
+def get_months(start_date, end_date, queryset):
+    months = set()
+    for order in queryset:
+        month = order.get_order_month()
+        months.update({month})
+    return months
 
 
-"""
-class StatsViewSet(viewsets.ModelViewSet):
-    queryset = Stats.objects.all()
+class StatsListApiView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = StatsSerializer
 
-    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
-    def filter_data(request, queryset, pk):
-        start_date = request.get_object().start_date
-        end_date = request.get_object().end_date
+    def post(self, request, *args, **kwargs):
+        start_date = parse_date(request.data['start_date'])
+        end_date = parse_date(request.data['end_date'])
         queryset = Order.objects.filter(
             date__range=[start_date, (end_date + datetime.timedelta(days=1))])
+
+        months = get_months(start_date, end_date, queryset)
         value = 0
-        price_count = {}
-        order_prices_count = []
-        order_months = [month for month in range(start_date.month, (end_date.month + 1))]
-        for month in order_months:
-            for order in queryset:
-                if order.date.month == month:
-                    order_month = f"{order.date.year}  {order.date.month}"
-                    price = {'month': order_month, 'value': value}
-                    for product in order.products.all():
-                        if order.date.month == month:
-                            value += float(product.price)
-                            price['value'] = value
-                    print(price)
-        order_prices_count.append(price)
-        print(order_prices_count)
-        price_count.update({'order': order_prices_count})
+        metric_price = f'/api/stats?date_start={start_date}&date_end={end_date}&metric=price'
+        metric_count = f'/api/stats?date_start={start_date}&date_end={end_date}&metric=count'
 
-        return Response(price_count.values())
+        if request.data['metric'] == "count":
+            count = []
+            for month in months:
+                total = {'month': month, 'value': value}
+                for order in queryset:
+                    if order.get_order_month() == month:
+                        for product in order.products.all():
+                            total['value'] += 1
+                count.append(total)
 
-    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
-    def filter_months(request, queryset, pk):
-        start_date = request.get_object().start_date
-        end_date = request.get_object().end_date
-        queryset = Order.objects.filter(
-            date__range=[start_date, (end_date + datetime.timedelta(days=1))])
-        count = 0
-        return Response(queryset)
-"""
+            context = {
+                "metric=='count'": count
+            }
+            redirect(metric_count)
+            return Response(context, status=status.HTTP_200_OK)
+
+        elif request.data['metric'] == "price":
+            price = []
+            for month in months:
+                total = {'month': month, 'value': value}
+                for order in queryset:
+                    if order.get_order_month() == month:
+                        for product in order.products.all():
+                            total['value'] += product.price
+                total['value'] = float("%.2f" % total['value'])
+                price.append(total)
+
+            context = {"metric='price'": price}
+            redirect(metric_price)
+            return Response(context, status=status.HTTP_200_OK)
