@@ -53,12 +53,3 @@ class Stats(models.Model):
 
     def __str__(self):
         return "Metric=" + str(self.metric)
-
-    def get_order_price(self):
-        orders = Order.objects.all()
-        count = 0
-        for order in orders:
-            for product in order.products:
-                count += product.price
-        return {'count': count}
-
