@@ -1,4 +1,3 @@
-from django.shortcuts import redirect
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -44,8 +43,8 @@ class StatsListApiView(APIView):
 
         months = get_months(start_date, end_date, queryset)
         value = 0
-        metric_price = f'/api/stats?date_start={start_date}&date_end={end_date}&metric=price'
-        metric_count = f'/api/stats?date_start={start_date}&date_end={end_date}&metric=count'
+        # metric_price = f'/api/stats?date_start={start_date}&date_end={end_date}&metric=price'
+        # metric_count = f'/api/stats?date_start={start_date}&date_end={end_date}&metric=count'
 
         if request.data['metric'] == "count":
             count = []
@@ -58,10 +57,12 @@ class StatsListApiView(APIView):
                 count.append(total)
 
             context = {
+                'start_date': start_date,
+                'end_date': end_date,
                 "metric=='count'": count
             }
-            redirect(metric_count)
-            return Response(context, status=status.HTTP_200_OK)
+            # redirect(metric_count)
+            return Response(context)
 
         elif request.data['metric'] == "price":
             price = []
@@ -74,6 +75,10 @@ class StatsListApiView(APIView):
                 total['value'] = float("%.2f" % total['value'])
                 price.append(total)
 
-            context = {"metric='price'": price}
-            redirect(metric_price)
+            context = {
+                'start_date': start_date,
+                'end_date': end_date,
+                "metric='price'": price
+            }
+            # redirect(metric_price)
             return Response(context, status=status.HTTP_200_OK)
